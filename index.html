@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rognage de Partition</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        .controls label {
+            margin-right: 10px;
+        }
+        .cropped-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .cropped-image {
+            overflow: hidden;
+            width: 50px; /* Ajusté pour correspondre à la taille de la note */
+            height: 150px; /* Ajusté pour correspondre à la taille de la note */
+            border: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .cropped-image img {
+            position: relative;
+        }
+        .debug-info {
+            font-size: 12px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rognage de Partition</h1>
+    <div class="cropped-images"></div>
+
+    <script>
+        const notesPositions = [
+            { leftMin: 0, leftMax: 50, top: 0 },
+            { leftMin: 50, leftMax: 100, top: 0 },
+            { leftMin: 100, leftMax: 150, top: 0 },
+            { leftMin: 150, leftMax: 200, top: 0 },
+            { leftMin: 200, leftMax: 250, top: 0 },
+            { leftMin: 0, leftMax: 50, top: 50 },
+            { leftMin: 50, leftMax: 100, top: 50 },
+            { leftMin: 100, leftMax: 150, top: 50 },
+            { leftMin: 150, leftMax: 200, top: 50 },
+            { leftMin: 200, leftMax: 250, top: 50 },
+            { leftMin: 250, leftMax: 300, top: 50 },
+            { leftMin: 300, leftMax: 350, top: 50 },
+            { leftMin: 350, leftMax: 400, top: 50 },
+            { leftMin: 400, leftMax: 450, top: 50 },
+        ];
+
+        const croppedImagesContainer = document.querySelector('.cropped-images');
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function updateNotes() {
+            croppedImagesContainer.innerHTML = '';
+            const usedIndices = new Set();
+
+            while (usedIndices.size < 5) {
+                const randomIndex = getRandomInt(0, notesPositions.length - 1);
+                usedIndices.add(randomIndex);
+            }
+
+            usedIndices.forEach(index => {
+                const position = notesPositions[index];
+                const left = getRandomInt(position.leftMin, position.leftMax);
+                const div = document.createElement('div');
+                div.className = 'cropped-image';
+
+                const img = document.createElement('img');
+                img.src = 'images/notes.jpg';
+                img.style.left = `-${left}px`;
+                img.style.top = `-${position.top}px`;
+
+                const debugInfo = document.createElement('div');
+                debugInfo.className = 'debug-info';
+                debugInfo.textContent = `leftMin: ${position.leftMin}, leftMax: ${position.leftMax}, left: ${left}`;
+
+                div.appendChild(img);
+                div.appendChild(debugInfo);
+                croppedImagesContainer.appendChild(div);
+            });
+        }
+
+        function startTimer() {
+            setInterval(updateNotes, 2000);
+        }
+
+        updateNotes();
+        startTimer();
+    </script>
+</body>
+</html>
