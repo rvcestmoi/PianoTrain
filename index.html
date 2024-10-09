@@ -37,9 +37,11 @@
             position: absolute;
         }
         .note-label {
-            font-size: 14px;
+            font-size: 16px; /* Taille de police augmentée */
+            font-weight: bold;
             color: #333;
-            margin-top: 5px;
+            margin-top: 120px; /* Position sous l'image */
+            position: relative;
         }
         .debug-info {
             font-size: 12px;
@@ -62,7 +64,7 @@
             { leftMin: 50, leftMax: 100, top: 0, note: 'D' },
             { leftMin: 100, leftMax: 150, top: 0, note: 'E' },
             { leftMin: 150, leftMax: 200, top: 0, note: 'F' },
-            { leftMin: 200, leftMax: 250, top: 'G' },
+            { leftMin: 200, leftMax: 250, top: 0, note: 'G' },
             { leftMin: 0, leftMax: 50, top: 50, note: 'A' },
             { leftMin: 50, leftMax: 100, top: 50, note: 'B' },
             { leftMin: 100, leftMax: 150, top: 50, note: 'C' },
