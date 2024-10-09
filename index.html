@@ -10,12 +10,11 @@
             flex-direction: column;
             align-items: center;
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
         }
-        .controls {
+        h1 {
             margin-top: 20px;
-        }
-        .controls label {
-            margin-right: 10px;
         }
         .cropped-images {
             display: flex;
@@ -25,20 +24,31 @@
         }
         .cropped-image {
             overflow: hidden;
-            width: 50px; /* Ajusté pour correspondre à la taille de la note */
-            height: 150px; /* Ajusté pour correspondre à la taille de la note */
+            width: 50px;
+            height: 150px;
             border: 1px solid #ccc;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
+            position: relative;
+            flex-direction: column;
         }
         .cropped-image img {
-            position: relative;
+            position: absolute;
+        }
+        .note-label {
+            font-size: 14px;
+            color: #333;
+            margin-top: 5px;
         }
         .debug-info {
             font-size: 12px;
             color: #555;
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 2px;
         }
     </style>
 </head>
@@ -48,20 +58,20 @@
 
     <script>
         const notesPositions = [
-            { leftMin: 0, leftMax: 50, top: 0 },
-            { leftMin: 50, leftMax: 100, top: 0 },
-            { leftMin: 100, leftMax: 150, top: 0 },
-            { leftMin: 150, leftMax: 200, top: 0 },
-            { leftMin: 200, leftMax: 250, top: 0 },
-            { leftMin: 0, leftMax: 50, top: 50 },
-            { leftMin: 50, leftMax: 100, top: 50 },
-            { leftMin: 100, leftMax: 150, top: 50 },
-            { leftMin: 150, leftMax: 200, top: 50 },
-            { leftMin: 200, leftMax: 250, top: 50 },
-            { leftMin: 250, leftMax: 300, top: 50 },
-            { leftMin: 300, leftMax: 350, top: 50 },
-            { leftMin: 350, leftMax: 400, top: 50 },
-            { leftMin: 400, leftMax: 450, top: 50 },
+            { leftMin: 0, leftMax: 50, top: 0, note: 'C' },
+            { leftMin: 50, leftMax: 100, top: 0, note: 'D' },
+            { leftMin: 100, leftMax: 150, top: 0, note: 'E' },
+            { leftMin: 150, leftMax: 200, top: 0, note: 'F' },
+            { leftMin: 200, leftMax: 250, top: 'G' },
+            { leftMin: 0, leftMax: 50, top: 50, note: 'A' },
+            { leftMin: 50, leftMax: 100, top: 50, note: 'B' },
+            { leftMin: 100, leftMax: 150, top: 50, note: 'C' },
+            { leftMin: 150, leftMax: 200, top: 50, note: 'D' },
+            { leftMin: 200, leftMax: 250, top: 50, note: 'E' },
+            { leftMin: 250, leftMax: 300, top: 50, note: 'F' },
+            { leftMin: 300, leftMax: 350, top: 50, note: 'G' },
+            { leftMin: 350, leftMax: 400, top: 50, note: 'A' },
+            { leftMin: 400, leftMax: 450, top: 50, note: 'B' },
         ];
 
         const croppedImagesContainer = document.querySelector('.cropped-images');
@@ -90,18 +100,23 @@
                 img.style.left = `-${left}px`;
                 img.style.top = `-${position.top}px`;
 
+                const noteLabel = document.createElement('div');
+                noteLabel.className = 'note-label';
+                noteLabel.textContent = position.note;
+
                 const debugInfo = document.createElement('div');
                 debugInfo.className = 'debug-info';
                 debugInfo.textContent = `leftMin: ${position.leftMin}, leftMax: ${position.leftMax}, left: ${left}`;
 
                 div.appendChild(img);
+                div.appendChild(noteLabel);
                 div.appendChild(debugInfo);
                 croppedImagesContainer.appendChild(div);
             });
         }
 
         function startTimer() {
-            setInterval(updateNotes, 2000);
+            setInterval(updateNotes, 5000); // 5 secondes
         }
 
         updateNotes();
