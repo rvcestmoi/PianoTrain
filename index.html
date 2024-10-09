@@ -16,6 +16,15 @@
         h1 {
             margin-top: 20px;
         }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .control {
+            margin: 10px;
+        }
         .cropped-images {
             display: flex;
             flex-wrap: wrap;
@@ -37,10 +46,10 @@
             position: absolute;
         }
         .note-label {
-            font-size: 16px; /* Taille de police augmentée */
+            font-size: 16px;
             font-weight: bold;
             color: #333;
-            margin-top: 120px; /* Position sous l'image */
+            margin-top: 120px;
             position: relative;
         }
         .debug-info {
@@ -56,35 +65,130 @@
 </head>
 <body>
     <h1>Rognage de Partition</h1>
+    
+    <div class="controls">
+        <div class="control">
+            <label for="noteIntervalSlider">Temps entre les sons (ms): <span id="noteIntervalValue">300</span></label>
+            <input type="range" id="noteIntervalSlider" min="100" max="1000" step="50" value="300">
+        </div>
+        <div class="control">
+            <label for="imageChangeIntervalSlider">Temps entre les changements d'image (ms): <span id="imageChangeIntervalValue">7000</span></label>
+            <input type="range" id="imageChangeIntervalSlider" min="1000" max="10000" step="500" value="7000">
+        </div>
+        <div class="control">
+            <label for="soundDelaySlider">Délai avant le son (ms): <span id="soundDelayValue">2000</span></label>
+            <input type="range" id="soundDelaySlider" min="0" max="5000" step="100" value="2000">
+        </div>
+        <button id="startStopButton">Start</button>
+    </div>
+    
     <div class="cropped-images"></div>
 
     <script>
-        const notesPositions = [
-            { leftMin: 0, leftMax: 50, top: 0, note: 'C' },
-            { leftMin: 50, leftMax: 100, top: 0, note: 'D' },
-            { leftMin: 100, leftMax: 150, top: 0, note: 'E' },
-            { leftMin: 150, leftMax: 200, top: 0, note: 'F' },
-            { leftMin: 200, leftMax: 250, top: 0, note: 'G' },
-            { leftMin: 0, leftMax: 50, top: 50, note: 'A' },
-            { leftMin: 50, leftMax: 100, top: 50, note: 'B' },
-            { leftMin: 100, leftMax: 150, top: 50, note: 'C' },
-            { leftMin: 150, leftMax: 200, top: 50, note: 'D' },
-            { leftMin: 200, leftMax: 250, top: 50, note: 'E' },
-            { leftMin: 250, leftMax: 300, top: 50, note: 'F' },
-            { leftMin: 300, leftMax: 350, top: 50, note: 'G' },
-            { leftMin: 350, leftMax: 400, top: 50, note: 'A' },
-            { leftMin: 400, leftMax: 450, top: 50, note: 'B' },
-        ];
+        let noteInterval = 300;
+        let imageChangeInterval = 7000;
+        let soundDelay = 2000; // Délai avant le son (en millisecondes)
+        let intervalId = null;
+        let isPlaying = false;
 
         const croppedImagesContainer = document.querySelector('.cropped-images');
+        const noteIntervalSlider = document.getElementById('noteIntervalSlider');
+        const imageChangeIntervalSlider = document.getElementById('imageChangeIntervalSlider');
+        const soundDelaySlider = document.getElementById('soundDelaySlider');
+        const noteIntervalValue = document.getElementById('noteIntervalValue');
+        const imageChangeIntervalValue = document.getElementById('imageChangeIntervalValue');
+        const soundDelayValue = document.getElementById('soundDelayValue');
+        const startStopButton = document.getElementById('startStopButton');
+
+        noteIntervalSlider.addEventListener('input', () => {
+            noteInterval = parseInt(noteIntervalSlider.value);
+            noteIntervalValue.textContent = noteInterval;
+        });
+
+        imageChangeIntervalSlider.addEventListener('input', () => {
+            imageChangeInterval = parseInt(imageChangeIntervalSlider.value);
+            imageChangeIntervalValue.textContent = imageChangeInterval;
+        });
+
+        soundDelaySlider.addEventListener('input', () => {
+            soundDelay = parseInt(soundDelaySlider.value);
+            soundDelayValue.textContent = soundDelay;
+        });
+
+        startStopButton.addEventListener('click', () => {
+            if (isPlaying) {
+                clearInterval(intervalId);
+                intervalId = null;
+                startStopButton.textContent = 'Start';
+                isPlaying = false;
+            } else {
+                updateNotes();
+                intervalId = setInterval(updateNotes, imageChangeInterval);
+                startStopButton.textContent = 'Stop';
+                isPlaying = true;
+            }
+        });
+
+        const notesPositions = [
+            { leftMin: 0, leftMax: 50, top: 0, note: 'C5' },
+            { leftMin: 50, leftMax: 100, top: 0, note: 'D5' },
+            { leftMin: 100, leftMax: 150, top: 0, note: 'E5' },
+            { leftMin: 150, leftMax: 200, top: 0, note: 'F5' },
+            { leftMin: 200, leftMax: 250, top: 0, note: 'G5' },
+            { leftMin: 0, leftMax: 50, top: 50, note: 'A5' },
+            { leftMin: 50, leftMax: 100, top: 50, note: 'B5' },
+            { leftMin: 100, leftMax: 150, top: 50, note: 'C6' },
+            { leftMin: 150, leftMax: 200, top: 50, note: 'D6' },
+            { leftMin: 200, leftMax: 250, top: 50, note: 'E6' },
+            { leftMin: 250, leftMax: 300, top: 50, note: 'F6' },
+            { leftMin: 300, leftMax: 350, top: 50, note: 'G6' },
+            { leftMin: 350, leftMax: 400, top: 50, note: 'A6' },
+            { leftMin: 400, leftMax: 450, top: 50, note: 'B6' },
+        ];
 
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
-        function updateNotes() {
+        async function playNotes(notes) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            for (const note of notes) {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(noteToFrequency(note), audioContext.currentTime);
+
+                const now = audioContext.currentTime;
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.8, now + 0.01);
+                gainNode.gain.linearRampToValueAtTime(0.6, now + 0.1);
+                gainNode.gain.setValueAtTime(0.6, now + 0.2);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+
+                oscillator.connect(gainNode).connect(audioContext.destination);
+                oscillator.start(now);
+                oscillator.stop(now + 0.5);
+
+                await new Promise(resolve => setTimeout(resolve, noteInterval));
+            }
+
+            audioContext.close();
+        }
+
+        function noteToFrequency(note) {
+            const noteFrequencies = {
+                "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "A5": 880.00, "B5": 987.77,
+                "C6": 1046.50, "D6": 1174.66, "E6": 1318.51, "F6": 1396.91, "G6": 1567.98, "A6": 1760.00, "B6": 1975.53
+            };
+            return noteFrequencies[note] || 440;
+        }
+
+        async function updateNotes() {
             croppedImagesContainer.innerHTML = '';
             const usedIndices = new Set();
+            const selectedNotes = [];
 
             while (usedIndices.size < 5) {
                 const randomIndex = getRandomInt(0, notesPositions.length - 1);
@@ -94,6 +198,8 @@
             usedIndices.forEach(index => {
                 const position = notesPositions[index];
                 const left = getRandomInt(position.leftMin, position.leftMax);
+                selectedNotes.push(position.note);
+                
                 const div = document.createElement('div');
                 div.className = 'cropped-image';
 
@@ -115,14 +221,11 @@
                 div.appendChild(debugInfo);
                 croppedImagesContainer.appendChild(div);
             });
-        }
 
-        function startTimer() {
-            setInterval(updateNotes, 5000); // 5 secondes
+            // Attendre le délai spécifié avant de jouer les sons
+            await new Promise(resolve => setTimeout(resolve, soundDelay));
+            await playNotes(selectedNotes);
         }
-
-        updateNotes();
-        startTimer();
     </script>
 </body>
 </html>
