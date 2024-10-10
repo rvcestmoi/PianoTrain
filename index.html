@@ -28,14 +28,13 @@
         .cropped-images {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 0px;
+            margin-top: 00px;
         }
         .cropped-image {
             overflow: hidden;
             width: 50px;
-            height: 150px;
-            border: 1px solid #ccc;
+            height: 191px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -142,28 +141,31 @@
         });
 
         const notesPositions = [
-            { leftMin: 0, leftMax: 50, top: 0, note: 'C5', position: 1 },
-            { leftMin: 50, leftMax: 100, top: 0, note: 'D5', position: 2 },
-            { leftMin: 100, leftMax: 150, top: 0, note: 'E5', position: 3 },
-            { leftMin: 150, leftMax: 200, top: 0, note: 'F5', position: 4 },
-            { leftMin: 200, leftMax: 250, top: 0, note: 'G5', position: 5 },
-            { leftMin: 0, leftMax: 50, top: 50, note: 'A5', position: 6 },
-            { leftMin: 50, leftMax: 100, top: 50, note: 'B5', position: 7 },
-            { leftMin: 100, leftMax: 150, top: 50, note: 'C6', position: 8 },
-            { leftMin: 150, leftMax: 200, top: 50, note: 'D6', position: 9 },
-            { leftMin: 200, leftMax: 250, top: 50, note: 'E6', position: 10 },
-            { leftMin: 250, leftMax: 300, top: 50, note: 'F6', position: 11 },
-            { leftMin: 300, leftMax: 350, top: 50, note: 'G6', position: 12 },
-            { leftMin: 350, leftMax: 400, top: 50, note: 'A6', position: 13 },
-            { leftMin: 400, leftMax: 450, top: 50, note: 'B6', position: 14 },
-        ];
+			{"leftMin": 0, "leftMax": 43, "top": 0, "note": "A4"},
+			{"leftMin": 43, "leftMax": 96, "top": 0, "note": "B4"},
+			{"leftMin": 96, "leftMax": 149, "top": 0, "note": "C4"},
+			{"leftMin": 149, "leftMax": 202, "top": 0, "note": "D4"},
+			{"leftMin": 202, "leftMax": 255, "top": 0, "note": "E4"},
+			{"leftMin": 255, "leftMax": 308, "top": 0, "note": "F5"},
+			{"leftMin": 308, "leftMax": 361, "top": 0, "note": "G5"},
+			{"leftMin": 361, "leftMax": 414, "top": 0, "note": "A5"},
+			{"leftMin": 414, "leftMax": 467, "top": 0, "note": "B5"},
+			{"leftMin": 467, "leftMax": 520, "top": 0, "note": "C5"},
+			{"leftMin": 520, "leftMax": 573, "top": 0, "note": "D5"},
+			{"leftMin": 573, "leftMax": 626, "top": 0, "note": "E5"},
+			{"leftMin": 626, "leftMax": 679, "top": 0, "note": "F6"},
+			{"leftMin": 679, "leftMax": 732, "top": 0, "note": "G6"},
+			{"leftMin": 732, "leftMax": 785, "top": 0, "note": "A6"},
+			{"leftMin": 785, "leftMax": 838, "top": 0, "note": "B6"},
+			{"leftMin": 838, "leftMax": 869, "top": 0, "note": "C6"},
+		]
+		;
 
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
         function getIntervalRange(difficultyLevel) {
-            // Détermine l'intervalle en fonction de la difficulté
             switch (difficultyLevel) {
                 case 1:
                     return 3; // Faible difficulté, petits intervalles
@@ -182,11 +184,9 @@
 
         async function playNotes(notes) {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
             for (const note of notes) {
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
-
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(noteToFrequency(note), audioContext.currentTime);
 
@@ -209,9 +209,24 @@
 
         function noteToFrequency(note) {
             const noteFrequencies = {
-                "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "A5": 880.00, "B5": 987.77,
-                "C6": 1046.50, "D6": 1174.66, "E6": 1318.51, "F6": 1396.91, "G6": 1567.98, "A6": 1760.00, "B6": 1975.53
-            };
+    "A4": 440.00,
+    "B4": 493.88,
+    "C4": 261.63,
+    "D4": 293.66,
+    "E4": 329.63,
+    "F5": 698.46,
+    "G5": 783.99,
+    "A5": 880.00,
+    "B5": 987.77,
+    "C5": 523.25,
+    "D5": 587.33,
+    "E5": 659.25,
+    "F6": 1396.91,
+    "G6": 1567.98,
+    "A6": 1760.00,
+    "B6": 1975.53,
+    "C6": 1046.50
+};
             return noteFrequencies[note] || 440;
         }
 
@@ -219,39 +234,25 @@
             croppedImagesContainer.innerHTML = '';
             const selectedNotes = [];
             const range = getIntervalRange(difficulty);
-            const randomStart = getRandomInt(0, notesPositions.length - range);
-            const randomIndexes = [];
+            const startPosition = getRandomInt(0, notesPositions.length - range);
+            const noteSet = notesPositions.slice(startPosition, startPosition + range);
+            const shuffledNotes = noteSet.sort(() => 0.5 - Math.random()).slice(0, 5);
 
-            // Sélection de notes aléatoires dans l'intervalle sans répétition et non ordonnée
-            while (randomIndexes.length < 5) {
-                let randomNoteIndex = getRandomInt(randomStart, randomStart + range - 1);
-                if (!randomIndexes.includes(randomNoteIndex)) {
-                    randomIndexes.push(randomNoteIndex);
-                    const position = notesPositions[randomNoteIndex];
-                    selectedNotes.push(position.note);
+            shuffledNotes.forEach(position => {
+                selectedNotes.push(position.note);
 
-                    const div = document.createElement('div');
-                    div.className = 'cropped-image';
+                const div = document.createElement('div');
+                div.className = 'cropped-image';
 
-                    const img = document.createElement('img');
-                    img.src = 'images/notes.jpg';
-                    img.style.left = `-${position.leftMin}px`;
-                    img.style.top = `-${position.top}px`;
+                const img = document.createElement('img');
+                img.src = 'images/notes.png';
+                img.style.left = `-${position.leftMin}px`;
+                img.style.top = `-${position.top}px`;
 
-                    const noteLabel = document.createElement('div');
-                    noteLabel.className = 'note-label';
-                    noteLabel.textContent = position.note;
+                div.appendChild(img);
 
-                    const debugInfo = document.createElement('div');
-                    debugInfo.className = 'debug-info';
-                    debugInfo.textContent = `Note: ${position.note}, Position: ${position.position}`;
-
-                    div.appendChild(img);
-                    div.appendChild(noteLabel);
-                    div.appendChild(debugInfo);
-                    croppedImagesContainer.appendChild(div);
-                }
-            }
+                croppedImagesContainer.appendChild(div);
+            });
 
             await new Promise(resolve => setTimeout(resolve, soundDelay));
             await playNotes(selectedNotes);
