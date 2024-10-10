@@ -29,7 +29,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 0px;
-            margin-top: 00px;
+            margin-top: 0px;
         }
         .cropped-image {
             overflow: hidden;
@@ -67,20 +67,20 @@
     
     <div class="controls">
         <div class="control">
-            <label for="noteIntervalSlider">Temps entre les sons (ms): <span id="noteIntervalValue">300</span></label>
-            <input type="range" id="noteIntervalSlider" min="100" max="1000" step="50" value="300">
+            <label for="noteIntervalSlider">Temps entre les sons (ms): <span id="noteIntervalValue"></span></label>
+            <input type="range" id="noteIntervalSlider" min="100" max="1000" step="50">
         </div>
         <div class="control">
-            <label for="imageChangeIntervalSlider">Temps entre les changements d'image (ms): <span id="imageChangeIntervalValue">7000</span></label>
-            <input type="range" id="imageChangeIntervalSlider" min="1000" max="10000" step="500" value="7000">
+            <label for="imageChangeIntervalSlider">Temps entre les changements d'image (ms): <span id="imageChangeIntervalValue"></span></label>
+            <input type="range" id="imageChangeIntervalSlider" min="1000" max="10000" step="500">
         </div>
         <div class="control">
-            <label for="soundDelaySlider">Délai avant le son (ms): <span id="soundDelayValue">2000</span></label>
-            <input type="range" id="soundDelaySlider" min="0" max="5000" step="100" value="2000">
+            <label for="soundDelaySlider">Délai avant le son (ms): <span id="soundDelayValue"></span></label>
+            <input type="range" id="soundDelaySlider" min="0" max="5000" step="100">
         </div>
         <div class="control">
-            <label for="difficultySlider">Difficulté: <span id="difficultyValue">1</span></label>
-            <input type="range" id="difficultySlider" min="1" max="5" step="1" value="1">
+            <label for="difficultySlider">Difficulté: <span id="difficultyValue"></span></label>
+            <input type="range" id="difficultySlider" min="1" max="5" step="1">
         </div>
         <button id="startStopButton">Start</button>
     </div>
@@ -88,10 +88,10 @@
     <div class="cropped-images"></div>
 
     <script>
-        let noteInterval = 300;
-        let imageChangeInterval = 7000;
-        let soundDelay = 2000;
-        let difficulty = 1;
+        let noteInterval = 600;
+        let imageChangeInterval = 6000;
+        let soundDelay = 3000;
+        let difficulty = 3;
         let intervalId = null;
         let isPlaying = false;
 
@@ -105,6 +105,19 @@
         const soundDelayValue = document.getElementById('soundDelayValue');
         const difficultyValue = document.getElementById('difficultyValue');
         const startStopButton = document.getElementById('startStopButton');
+
+        // Initialize the sliders and labels with the variable values
+        function initializeSliders() {
+            noteIntervalSlider.value = noteInterval;
+            imageChangeIntervalSlider.value = imageChangeInterval;
+            soundDelaySlider.value = soundDelay;
+            difficultySlider.value = difficulty;
+
+            noteIntervalValue.textContent = noteInterval;
+            imageChangeIntervalValue.textContent = imageChangeInterval;
+            soundDelayValue.textContent = soundDelay;
+            difficultyValue.textContent = difficulty;
+        }
 
         noteIntervalSlider.addEventListener('input', () => {
             noteInterval = parseInt(noteIntervalSlider.value);
@@ -141,25 +154,26 @@
         });
 
         const notesPositions = [
-			{"leftMin": 0, "leftMax": 43, "top": 0, "note": "A4"},
-			{"leftMin": 43, "leftMax": 96, "top": 0, "note": "B4"},
-			{"leftMin": 96, "leftMax": 149, "top": 0, "note": "C4"},
-			{"leftMin": 149, "leftMax": 202, "top": 0, "note": "D4"},
-			{"leftMin": 202, "leftMax": 255, "top": 0, "note": "E4"},
-			{"leftMin": 255, "leftMax": 308, "top": 0, "note": "F5"},
-			{"leftMin": 308, "leftMax": 361, "top": 0, "note": "G5"},
-			{"leftMin": 361, "leftMax": 414, "top": 0, "note": "A5"},
-			{"leftMin": 414, "leftMax": 467, "top": 0, "note": "B5"},
-			{"leftMin": 467, "leftMax": 520, "top": 0, "note": "C5"},
-			{"leftMin": 520, "leftMax": 573, "top": 0, "note": "D5"},
-			{"leftMin": 573, "leftMax": 626, "top": 0, "note": "E5"},
-			{"leftMin": 626, "leftMax": 679, "top": 0, "note": "F6"},
-			{"leftMin": 679, "leftMax": 732, "top": 0, "note": "G6"},
-			{"leftMin": 732, "leftMax": 785, "top": 0, "note": "A6"},
-			{"leftMin": 785, "leftMax": 838, "top": 0, "note": "B6"},
-			{"leftMin": 838, "leftMax": 869, "top": 0, "note": "C6"},
-		]
-		;
+            {"leftMin": 0, "leftMax": 43, "top": 0, "note": "A4"},
+            {"leftMin": 43, "leftMax": 96, "top": 0, "note": "B4"},
+            {"leftMin": 96, "leftMax": 149, "top": 0, "note": "C4"},
+            {"leftMin": 149, "leftMax": 202, "top": 0, "note": "D4"},
+            {"leftMin": 202, "leftMax": 255, "top": 0, "note": "E4"},
+            {"leftMin": 255, "leftMax": 308, "top": 0, "note": "F5"},
+            {"leftMin": 308, "leftMax": 361, "top": 0, "note": "G5"},
+            {"leftMin": 361, "leftMax": 414, "top": 0, "note": "A5"},
+            {"leftMin": 414, "leftMax": 467, "top": 0, "note": "B5"},
+            {"leftMin": 467, "leftMax": 520, "top": 0, "note": "C5"},
+            {"leftMin": 520, "leftMax": 573, "top": 0, "note": "D5"},
+            {"leftMin": 573, "leftMax": 626, "top": 0, "note": "E5"},
+            {"leftMin": 626, "leftMax": 679, "top": 0, "note": "F6"},
+            {"leftMin": 679, "leftMax": 732, "top": 0, "note": "G6"},
+            {"leftMin": 732, "leftMax": 785, "top": 0, "note": "A6"},
+            {"leftMin": 785, "leftMax": 838, "top": 0, "note": "B6"},
+            {"leftMin": 838, "leftMax": 869, "top": 0, "note": "C6"}
+        ];
+
+        initializeSliders();
 
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
