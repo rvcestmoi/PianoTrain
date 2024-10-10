@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rognage de Partition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.34/Tone.min.js"></script>
     <style>
         body {
             display: flex;
@@ -45,20 +46,12 @@
             position: absolute;
         }
         .note-label {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             color: #333;
-            margin-top: 120px;
+            margin-top: -150px;
+            margin-right: 33px;
             position: relative;
-        }
-        .debug-info {
-            font-size: 12px;
-            color: #555;
-            position: absolute;
-            bottom: 5px;
-            left: 5px;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 2px;
         }
     </style>
 </head>
@@ -67,20 +60,20 @@
     
     <div class="controls">
         <div class="control">
-            <label for="noteIntervalSlider">Temps entre les sons (ms): <span id="noteIntervalValue"></span></label>
-            <input type="range" id="noteIntervalSlider" min="100" max="1000" step="50">
+            <label for="noteIntervalSlider">Temps entre les sons (ms): <span id="noteIntervalValue">600</span></label>
+            <input type="range" id="noteIntervalSlider" min="100" max="1000" step="50" value="600">
         </div>
         <div class="control">
-            <label for="imageChangeIntervalSlider">Temps entre les changements d'image (ms): <span id="imageChangeIntervalValue"></span></label>
-            <input type="range" id="imageChangeIntervalSlider" min="1000" max="10000" step="500">
+            <label for="imageChangeIntervalSlider">Temps entre les changements d'image (ms): <span id="imageChangeIntervalValue">6000</span></label>
+            <input type="range" id="imageChangeIntervalSlider" min="1000" max="10000" step="500" value="6000">
         </div>
         <div class="control">
-            <label for="soundDelaySlider">Délai avant le son (ms): <span id="soundDelayValue"></span></label>
-            <input type="range" id="soundDelaySlider" min="0" max="5000" step="100">
+            <label for="soundDelaySlider">Délai avant le son (ms): <span id="soundDelayValue">3000</span></label>
+            <input type="range" id="soundDelaySlider" min="0" max="5000" step="100" value="3000">
         </div>
         <div class="control">
-            <label for="difficultySlider">Difficulté: <span id="difficultyValue"></span></label>
-            <input type="range" id="difficultySlider" min="1" max="5" step="1">
+            <label for="difficultySlider">Difficulté: <span id="difficultyValue">3</span></label>
+            <input type="range" id="difficultySlider" min="1" max="5" step="1" value="3">
         </div>
         <button id="startStopButton">Start</button>
     </div>
@@ -106,7 +99,8 @@
         const difficultyValue = document.getElementById('difficultyValue');
         const startStopButton = document.getElementById('startStopButton');
 
-        // Initialize the sliders and labels with the variable values
+        const synth = new Tone.Synth().toDestination();
+
         function initializeSliders() {
             noteIntervalSlider.value = noteInterval;
             imageChangeIntervalSlider.value = imageChangeInterval;
@@ -139,13 +133,14 @@
             difficultyValue.textContent = difficulty;
         });
 
-        startStopButton.addEventListener('click', () => {
+        startStopButton.addEventListener('click', async () => {
             if (isPlaying) {
                 clearInterval(intervalId);
                 intervalId = null;
                 startStopButton.textContent = 'Start';
                 isPlaying = false;
             } else {
+                await Tone.start();
                 updateNotes();
                 intervalId = setInterval(updateNotes, imageChangeInterval);
                 startStopButton.textContent = 'Stop';
@@ -159,8 +154,8 @@
             {"leftMin": 96, "leftMax": 149, "top": 0, "note": "C4"},
             {"leftMin": 149, "leftMax": 202, "top": 0, "note": "D4"},
             {"leftMin": 202, "leftMax": 255, "top": 0, "note": "E4"},
-            {"leftMin": 255, "leftMax": 308, "top": 0, "note": "F5"},
-            {"leftMin": 308, "leftMax": 361, "top": 0, "note": "G5"},
+            {"leftMin": 255, "leftMax": 308, "top": 0, "note": "F4"},
+            {"leftMin": 308, "leftMax": 361, "top": 0, "note": "G4"},
             {"leftMin": 361, "leftMax": 414, "top": 0, "note": "A5"},
             {"leftMin": 414, "leftMax": 467, "top": 0, "note": "B5"},
             {"leftMin": 467, "leftMax": 520, "top": 0, "note": "C5"},
@@ -173,88 +168,37 @@
             {"leftMin": 838, "leftMax": 869, "top": 0, "note": "C6"}
         ];
 
-        initializeSliders();
-
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
         function getIntervalRange(difficultyLevel) {
-            switch (difficultyLevel) {
-                case 1:
-                    return 3; // Faible difficulté, petits intervalles
-                case 2:
-                    return 5; // Intervalle de 5 notes
-                case 3:
-                    return 7; // Intervalle plus large
-                case 4:
-                    return 9; // Intervalle encore plus large
-                case 5:
-                    return 12; // Très grande difficulté
-                default:
-                    return 5;
-            }
+            return difficultyLevel === 1 ? 3 : difficultyLevel * 2 + 1;
         }
 
         async function playNotes(notes) {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             for (const note of notes) {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(noteToFrequency(note), audioContext.currentTime);
-
-                const now = audioContext.currentTime;
-                gainNode.gain.setValueAtTime(0, now);
-                gainNode.gain.linearRampToValueAtTime(0.8, now + 0.01);
-                gainNode.gain.linearRampToValueAtTime(0.6, now + 0.1);
-                gainNode.gain.setValueAtTime(0.6, now + 0.2);
-                gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
-
-                oscillator.connect(gainNode).connect(audioContext.destination);
-                oscillator.start(now);
-                oscillator.stop(now + 0.5);
-
+                synth.triggerAttackRelease(note, "8n");
                 await new Promise(resolve => setTimeout(resolve, noteInterval));
             }
-
-            audioContext.close();
-        }
-
-        function noteToFrequency(note) {
-            const noteFrequencies = {
-    "A4": 440.00,
-    "B4": 493.88,
-    "C4": 261.63,
-    "D4": 293.66,
-    "E4": 329.63,
-    "F5": 698.46,
-    "G5": 783.99,
-    "A5": 880.00,
-    "B5": 987.77,
-    "C5": 523.25,
-    "D5": 587.33,
-    "E5": 659.25,
-    "F6": 1396.91,
-    "G6": 1567.98,
-    "A6": 1760.00,
-    "B6": 1975.53,
-    "C6": 1046.50
-};
-            return noteFrequencies[note] || 440;
         }
 
         async function updateNotes() {
             croppedImagesContainer.innerHTML = '';
-            const selectedNotes = [];
             const range = getIntervalRange(difficulty);
             const startPosition = getRandomInt(0, notesPositions.length - range);
-            const noteSet = notesPositions.slice(startPosition, startPosition + range);
-            const shuffledNotes = noteSet.sort(() => 0.5 - Math.random()).slice(0, 5);
+            let selectedNotes = notesPositions.slice(startPosition, startPosition + range);
 
-            shuffledNotes.forEach(position => {
-                selectedNotes.push(position.note);
+            // Identifier la note la plus basse et l'ajouter en premier
+            if (difficulty <= 3) {
+                const lowestNote = selectedNotes.reduce((min, note) => note.leftMin < min.leftMin ? note : min);
+                selectedNotes = selectedNotes.filter(note => note !== lowestNote);
+                selectedNotes = [lowestNote, ...selectedNotes.sort(() => Math.random() - 0.5).slice(0, 4)];
+            } else {
+                selectedNotes = selectedNotes.sort(() => Math.random() - 0.5).slice(0, 5);
+            }
 
+            selectedNotes.forEach(position => {
                 const div = document.createElement('div');
                 div.className = 'cropped-image';
 
@@ -263,14 +207,21 @@
                 img.style.left = `-${position.leftMin}px`;
                 img.style.top = `-${position.top}px`;
 
-                div.appendChild(img);
+                const noteLabel = document.createElement('div');
+                noteLabel.className = 'note-label';
+                noteLabel.textContent = position.note;
 
+                div.appendChild(img);
+                div.appendChild(noteLabel);
                 croppedImagesContainer.appendChild(div);
             });
 
+            const notesToPlay = selectedNotes.map(noteObj => noteObj.note);
             await new Promise(resolve => setTimeout(resolve, soundDelay));
-            await playNotes(selectedNotes);
+            await playNotes(notesToPlay);
         }
+
+        initializeSliders();
     </script>
 </body>
 </html>
