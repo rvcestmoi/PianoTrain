@@ -79,6 +79,10 @@
             <label for="soundDelaySlider">Délai avant le son (ms): <span id="soundDelayValue">2000</span></label>
             <input type="range" id="soundDelaySlider" min="0" max="5000" step="100" value="2000">
         </div>
+        <div class="control">
+            <label for="difficultySlider">Difficulté: <span id="difficultyValue">1</span></label>
+            <input type="range" id="difficultySlider" min="1" max="5" step="1" value="1">
+        </div>
         <button id="startStopButton">Start</button>
     </div>
     
@@ -87,7 +91,8 @@
     <script>
         let noteInterval = 300;
         let imageChangeInterval = 7000;
-        let soundDelay = 2000; // Délai avant le son (en millisecondes)
+        let soundDelay = 2000;
+        let difficulty = 1;
         let intervalId = null;
         let isPlaying = false;
 
@@ -95,9 +100,11 @@
         const noteIntervalSlider = document.getElementById('noteIntervalSlider');
         const imageChangeIntervalSlider = document.getElementById('imageChangeIntervalSlider');
         const soundDelaySlider = document.getElementById('soundDelaySlider');
+        const difficultySlider = document.getElementById('difficultySlider');
         const noteIntervalValue = document.getElementById('noteIntervalValue');
         const imageChangeIntervalValue = document.getElementById('imageChangeIntervalValue');
         const soundDelayValue = document.getElementById('soundDelayValue');
+        const difficultyValue = document.getElementById('difficultyValue');
         const startStopButton = document.getElementById('startStopButton');
 
         noteIntervalSlider.addEventListener('input', () => {
@@ -115,6 +122,11 @@
             soundDelayValue.textContent = soundDelay;
         });
 
+        difficultySlider.addEventListener('input', () => {
+            difficulty = parseInt(difficultySlider.value);
+            difficultyValue.textContent = difficulty;
+        });
+
         startStopButton.addEventListener('click', () => {
             if (isPlaying) {
                 clearInterval(intervalId);
@@ -130,24 +142,42 @@
         });
 
         const notesPositions = [
-            { leftMin: 0, leftMax: 50, top: 0, note: 'C5' },
-            { leftMin: 50, leftMax: 100, top: 0, note: 'D5' },
-            { leftMin: 100, leftMax: 150, top: 0, note: 'E5' },
-            { leftMin: 150, leftMax: 200, top: 0, note: 'F5' },
-            { leftMin: 200, leftMax: 250, top: 0, note: 'G5' },
-            { leftMin: 0, leftMax: 50, top: 50, note: 'A5' },
-            { leftMin: 50, leftMax: 100, top: 50, note: 'B5' },
-            { leftMin: 100, leftMax: 150, top: 50, note: 'C6' },
-            { leftMin: 150, leftMax: 200, top: 50, note: 'D6' },
-            { leftMin: 200, leftMax: 250, top: 50, note: 'E6' },
-            { leftMin: 250, leftMax: 300, top: 50, note: 'F6' },
-            { leftMin: 300, leftMax: 350, top: 50, note: 'G6' },
-            { leftMin: 350, leftMax: 400, top: 50, note: 'A6' },
-            { leftMin: 400, leftMax: 450, top: 50, note: 'B6' },
+            { leftMin: 0, leftMax: 50, top: 0, note: 'C5', position: 1 },
+            { leftMin: 50, leftMax: 100, top: 0, note: 'D5', position: 2 },
+            { leftMin: 100, leftMax: 150, top: 0, note: 'E5', position: 3 },
+            { leftMin: 150, leftMax: 200, top: 0, note: 'F5', position: 4 },
+            { leftMin: 200, leftMax: 250, top: 0, note: 'G5', position: 5 },
+            { leftMin: 0, leftMax: 50, top: 50, note: 'A5', position: 6 },
+            { leftMin: 50, leftMax: 100, top: 50, note: 'B5', position: 7 },
+            { leftMin: 100, leftMax: 150, top: 50, note: 'C6', position: 8 },
+            { leftMin: 150, leftMax: 200, top: 50, note: 'D6', position: 9 },
+            { leftMin: 200, leftMax: 250, top: 50, note: 'E6', position: 10 },
+            { leftMin: 250, leftMax: 300, top: 50, note: 'F6', position: 11 },
+            { leftMin: 300, leftMax: 350, top: 50, note: 'G6', position: 12 },
+            { leftMin: 350, leftMax: 400, top: 50, note: 'A6', position: 13 },
+            { leftMin: 400, leftMax: 450, top: 50, note: 'B6', position: 14 },
         ];
 
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function getIntervalRange(difficultyLevel) {
+            // Détermine l'intervalle en fonction de la difficulté
+            switch (difficultyLevel) {
+                case 1:
+                    return 3; // Faible difficulté, petits intervalles
+                case 2:
+                    return 5; // Intervalle de 5 notes
+                case 3:
+                    return 7; // Intervalle plus large
+                case 4:
+                    return 9; // Intervalle encore plus large
+                case 5:
+                    return 12; // Très grande difficulté
+                default:
+                    return 5;
+            }
         }
 
         async function playNotes(notes) {
@@ -187,42 +217,42 @@
 
         async function updateNotes() {
             croppedImagesContainer.innerHTML = '';
-            const usedIndices = new Set();
             const selectedNotes = [];
+            const range = getIntervalRange(difficulty);
+            const randomStart = getRandomInt(0, notesPositions.length - range);
+            const randomIndexes = [];
 
-            while (usedIndices.size < 5) {
-                const randomIndex = getRandomInt(0, notesPositions.length - 1);
-                usedIndices.add(randomIndex);
+            // Sélection de notes aléatoires dans l'intervalle sans répétition et non ordonnée
+            while (randomIndexes.length < 5) {
+                let randomNoteIndex = getRandomInt(randomStart, randomStart + range - 1);
+                if (!randomIndexes.includes(randomNoteIndex)) {
+                    randomIndexes.push(randomNoteIndex);
+                    const position = notesPositions[randomNoteIndex];
+                    selectedNotes.push(position.note);
+
+                    const div = document.createElement('div');
+                    div.className = 'cropped-image';
+
+                    const img = document.createElement('img');
+                    img.src = 'images/notes.jpg';
+                    img.style.left = `-${position.leftMin}px`;
+                    img.style.top = `-${position.top}px`;
+
+                    const noteLabel = document.createElement('div');
+                    noteLabel.className = 'note-label';
+                    noteLabel.textContent = position.note;
+
+                    const debugInfo = document.createElement('div');
+                    debugInfo.className = 'debug-info';
+                    debugInfo.textContent = `Note: ${position.note}, Position: ${position.position}`;
+
+                    div.appendChild(img);
+                    div.appendChild(noteLabel);
+                    div.appendChild(debugInfo);
+                    croppedImagesContainer.appendChild(div);
+                }
             }
 
-            usedIndices.forEach(index => {
-                const position = notesPositions[index];
-                const left = getRandomInt(position.leftMin, position.leftMax);
-                selectedNotes.push(position.note);
-                
-                const div = document.createElement('div');
-                div.className = 'cropped-image';
-
-                const img = document.createElement('img');
-                img.src = 'images/notes.jpg';
-                img.style.left = `-${left}px`;
-                img.style.top = `-${position.top}px`;
-
-                const noteLabel = document.createElement('div');
-                noteLabel.className = 'note-label';
-                noteLabel.textContent = position.note;
-
-                const debugInfo = document.createElement('div');
-                debugInfo.className = 'debug-info';
-                debugInfo.textContent = `leftMin: ${position.leftMin}, leftMax: ${position.leftMax}, left: ${left}`;
-
-                div.appendChild(img);
-                div.appendChild(noteLabel);
-                div.appendChild(debugInfo);
-                croppedImagesContainer.appendChild(div);
-            });
-
-            // Attendre le délai spécifié avant de jouer les sons
             await new Promise(resolve => setTimeout(resolve, soundDelay));
             await playNotes(selectedNotes);
         }
