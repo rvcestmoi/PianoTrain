@@ -26,6 +26,11 @@
         .control {
             margin: 10px;
         }
+        .cropped-images-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
         .cropped-images {
             display: flex;
             flex-wrap: wrap;
@@ -84,6 +89,7 @@
             <select id="clefSelect">
                 <option value="sol">Clé de Sol</option>
                 <option value="fa">Clé de Fa</option>
+                <option value="sol_fa">Clé de Sol + Clé de Fa</option>
             </select>
         </div>
         <div class="control">
@@ -93,7 +99,10 @@
         <button id="startStopButton">Start</button>
     </div>
     
-    <div class="cropped-images"></div>
+    <div class="cropped-images-container">
+        <div class="cropped-images" id="croppedImagesSol"></div>
+        <div class="cropped-images" id="croppedImagesFa"></div>
+    </div>
 
     <script>
         let noteInterval = 600;
@@ -106,7 +115,8 @@
         let intervalId = null;
         let isPlaying = false;
 
-        const croppedImagesContainer = document.querySelector('.cropped-images');
+        const croppedImagesSolContainer = document.getElementById('croppedImagesSol');
+        const croppedImagesFaContainer = document.getElementById('croppedImagesFa');
         const noteIntervalSlider = document.getElementById('noteIntervalSlider');
         const imageChangeIntervalSlider = document.getElementById('imageChangeIntervalSlider');
         const soundDelaySlider = document.getElementById('soundDelaySlider');
@@ -163,10 +173,6 @@
             {"leftMin": 838, "leftMax": 869, "top": 0, "note": "E5"}
         ];
 
-        function getNotesPositions() {
-            return clef === 'fa' ? notesPositionsFa : notesPositionsSol;
-        }
-
         function initializeSliders() {
             noteIntervalSlider.value = noteInterval;
             imageChangeIntervalSlider.value = imageChangeInterval;
@@ -174,7 +180,6 @@
             difficultySlider.value = difficulty;
             numNotesSlider.value = numNotes;
             clefSelect.value = clef;
-            toggleLabels.checked = showLabels;
 
             noteIntervalValue.textContent = noteInterval;
             imageChangeIntervalValue.textContent = imageChangeInterval;
@@ -182,6 +187,98 @@
             difficultyValue.textContent = difficulty;
             numNotesValue.textContent = numNotes;
         }
+
+        function getIntervalRange(difficultyLevel) {
+            return difficultyLevel === 1 ? 4 : difficultyLevel + 3;
+        }
+
+        function getNotesPositions() {
+            return clef === 'fa' ? notesPositionsFa : notesPositionsSol;
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        async function playNotes(notes) {
+            for (const note of notes) {
+                synth.triggerAttackRelease(note, "8n");
+                await new Promise(resolve => setTimeout(resolve, noteInterval));
+            }
+        }
+
+        function displayNotes(notes, container) {
+            notes.forEach(position => {
+                const div = document.createElement('div');
+                div.className = 'cropped-image';
+
+                const img = document.createElement('img');
+                img.src = 'images/notes.png';
+                img.style.left = `-${position.leftMin}px`;
+                img.style.top = `-${position.top}px`;
+
+                const noteLabel = document.createElement('div');
+                noteLabel.className = 'note-label';
+                noteLabel.textContent = position.note;
+                noteLabel.style.display = showLabels ? 'block' : 'none';
+
+                div.appendChild(img);
+                div.appendChild(noteLabel);
+                container.appendChild(div);
+            });
+        }
+
+        async function updateNotes() {
+            croppedImagesSolContainer.innerHTML = '';
+            croppedImagesFaContainer.innerHTML = '';
+
+            const range = getIntervalRange(difficulty);
+            const selectedNotesSol = [];
+            const selectedNotesFa = [];
+
+            if (clef === 'sol' || clef === 'sol_fa') {
+                const startPositionSol = getRandomInt(0, notesPositionsSol.length - range);
+                const possibleNotesSol = notesPositionsSol.slice(startPositionSol, startPositionSol + range);
+                selectedNotesSol.push(possibleNotesSol.reduce((min, note) => (note.leftMin < min.leftMin ? note : min)));
+                for (let i = 1; i < numNotes; i++) {
+                    selectedNotesSol.push(possibleNotesSol[getRandomInt(0, possibleNotesSol.length - 1)]);
+                }
+                displayNotes(selectedNotesSol, croppedImagesSolContainer);
+            }
+
+            if (clef === 'fa' || clef === 'sol_fa') {
+                const startPositionFa = getRandomInt(0, notesPositionsFa.length - range);
+                const possibleNotesFa = notesPositionsFa.slice(startPositionFa, startPositionFa + range);
+                selectedNotesFa.push(possibleNotesFa.reduce((min, note) => (note.leftMin < min.leftMin ? note : min)));
+                for (let i = 1; i < numNotes; i++) {
+                    selectedNotesFa.push(possibleNotesFa[getRandomInt(0, possibleNotesFa.length - 1)]);
+                }
+                displayNotes(selectedNotesFa, croppedImagesFaContainer);
+            }
+
+            const notesToPlay = [...selectedNotesSol.map(n => n.note), ...selectedNotesFa.map(n => n.note)];
+            await new Promise(resolve => setTimeout(resolve, soundDelay));
+            await playNotes(notesToPlay);
+        }
+
+        toggleLabels.addEventListener('change', () => {
+            showLabels = toggleLabels.checked;
+        });
+
+        startStopButton.addEventListener('click', async () => {
+            if (isPlaying) {
+                clearInterval(intervalId);
+                intervalId = null;
+                startStopButton.textContent = 'Start';
+                isPlaying = false;
+            } else {
+                await Tone.start();
+                updateNotes();
+                intervalId = setInterval(updateNotes, imageChangeInterval);
+                startStopButton.textContent = 'Stop';
+                isPlaying = true;
+            }
+        });
 
         noteIntervalSlider.addEventListener('input', () => {
             noteInterval = parseInt(noteIntervalSlider.value);
@@ -211,83 +308,6 @@
         clefSelect.addEventListener('change', () => {
             clef = clefSelect.value;
         });
-
-        toggleLabels.addEventListener('change', () => {
-            showLabels = toggleLabels.checked;
-        });
-
-        startStopButton.addEventListener('click', async () => {
-            if (isPlaying) {
-                clearInterval(intervalId);
-                intervalId = null;
-                startStopButton.textContent = 'Start';
-                isPlaying = false;
-            } else {
-                await Tone.start();
-                updateNotes();
-                intervalId = setInterval(updateNotes, imageChangeInterval);
-                startStopButton.textContent = 'Stop';
-                isPlaying = true;
-            }
-        });
-
-        function getRandomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
-
-        function getIntervalRange(difficultyLevel) {
-            return difficultyLevel === 1 ? 3 : difficultyLevel * 2 + 1;
-        }
-
-        async function playNotes(notes) {
-            for (const note of notes) {
-                synth.triggerAttackRelease(note, "8n");
-                await new Promise(resolve => setTimeout(resolve, noteInterval));
-            }
-        }
-
-        async function updateNotes() {
-    croppedImagesContainer.innerHTML = '';
-    const notesPositions = getNotesPositions();
-    const range = getIntervalRange(difficulty); // Définit la plage en fonction de la difficulté
-    const startPosition = getRandomInt(0, notesPositions.length - range);
-    const possibleNotes = notesPositions.slice(startPosition, startPosition + range);
-
-    // Sélectionne la note la plus basse pour la première position
-    const lowestNote = possibleNotes.reduce((min, note) => (note.leftMin < min.leftMin ? note : min));
-    let selectedNotes = [lowestNote];
-
-    // Remplit le reste de `selectedNotes` avec des notes aléatoires de `possibleNotes`, répétitions autorisées
-    for (let i = 1; i < numNotes; i++) {
-        const randomIndex = getRandomInt(0, possibleNotes.length - 1);
-        selectedNotes.push(possibleNotes[randomIndex]);
-    }
-
-    selectedNotes.forEach(position => {
-        const div = document.createElement('div');
-        div.className = 'cropped-image';
-
-        const img = document.createElement('img');
-        img.src = 'images/notes.png';
-        img.style.left = `-${position.leftMin}px`;
-        img.style.top = `-${position.top}px`;
-
-        const noteLabel = document.createElement('div');
-        noteLabel.className = 'note-label';
-        noteLabel.textContent = position.note;
-
-        noteLabel.style.display = showLabels ? 'block' : 'none';
-
-        div.appendChild(img);
-        div.appendChild(noteLabel);
-        croppedImagesContainer.appendChild(div);
-    });
-
-    const notesToPlay = selectedNotes.map(noteObj => noteObj.note);
-    await new Promise(resolve => setTimeout(resolve, soundDelay));
-    await playNotes(notesToPlay);
-}
-
 
         initializeSliders();
     </script>
