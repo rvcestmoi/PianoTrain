@@ -131,7 +131,8 @@
         const numNotesValue = document.getElementById('numNotesValue');
         const startStopButton = document.getElementById('startStopButton');
 
-        const synth = new Tone.Synth().toDestination();
+        const synthSol = new Tone.Synth().toDestination();
+        const synthFa = new Tone.Synth().toDestination();
 
         const notesPositionsSol = [
             {"leftMin": 0, "leftMax": 43, "top": 0, "note": "A4"},
@@ -192,19 +193,15 @@
             return difficultyLevel === 1 ? 4 : difficultyLevel + 3;
         }
 
-        function getNotesPositions() {
-            return clef === 'fa' ? notesPositionsFa : notesPositionsSol;
-        }
-
-        function getRandomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
-
-        async function playNotes(notes) {
-            for (const note of notes) {
-                synth.triggerAttackRelease(note, "8n");
-                await new Promise(resolve => setTimeout(resolve, noteInterval));
-            }
+        async function playNotes(notesSol, notesFa) {
+            const now = Tone.now();
+            notesSol.forEach((note, i) => {
+                synthSol.triggerAttackRelease(note, "8n", now + i * (noteInterval / 1000));
+            });
+            notesFa.forEach((note, i) => {
+                synthFa.triggerAttackRelease(note, "8n", now + i * (noteInterval / 1000));
+            });
+            await new Promise(resolve => setTimeout(resolve, Math.max(notesSol.length, notesFa.length) * noteInterval));
         }
 
         function displayNotes(notes, container) {
@@ -233,32 +230,34 @@
             croppedImagesFaContainer.innerHTML = '';
 
             const range = getIntervalRange(difficulty);
-            const selectedNotesSol = [];
-            const selectedNotesFa = [];
+            let selectedNotesSol = [];
+            let selectedNotesFa = [];
 
             if (clef === 'sol' || clef === 'sol_fa') {
-                const startPositionSol = getRandomInt(0, notesPositionsSol.length - range);
+                const startPositionSol = Math.floor(Math.random() * (notesPositionsSol.length - range));
                 const possibleNotesSol = notesPositionsSol.slice(startPositionSol, startPositionSol + range);
                 selectedNotesSol.push(possibleNotesSol.reduce((min, note) => (note.leftMin < min.leftMin ? note : min)));
                 for (let i = 1; i < numNotes; i++) {
-                    selectedNotesSol.push(possibleNotesSol[getRandomInt(0, possibleNotesSol.length - 1)]);
+                    selectedNotesSol.push(possibleNotesSol[Math.floor(Math.random() * possibleNotesSol.length)]);
                 }
                 displayNotes(selectedNotesSol, croppedImagesSolContainer);
             }
 
             if (clef === 'fa' || clef === 'sol_fa') {
-                const startPositionFa = getRandomInt(0, notesPositionsFa.length - range);
+                const startPositionFa = Math.floor(Math.random() * (notesPositionsFa.length - range));
                 const possibleNotesFa = notesPositionsFa.slice(startPositionFa, startPositionFa + range);
                 selectedNotesFa.push(possibleNotesFa.reduce((min, note) => (note.leftMin < min.leftMin ? note : min)));
                 for (let i = 1; i < numNotes; i++) {
-                    selectedNotesFa.push(possibleNotesFa[getRandomInt(0, possibleNotesFa.length - 1)]);
+                    selectedNotesFa.push(possibleNotesFa[Math.floor(Math.random() * possibleNotesFa.length)]);
                 }
                 displayNotes(selectedNotesFa, croppedImagesFaContainer);
             }
 
-            const notesToPlay = [...selectedNotesSol.map(n => n.note), ...selectedNotesFa.map(n => n.note)];
+            const notesToPlaySol = selectedNotesSol.map(n => n.note);
+            const notesToPlayFa = selectedNotesFa.map(n => n.note);
+
             await new Promise(resolve => setTimeout(resolve, soundDelay));
-            await playNotes(notesToPlay);
+            await playNotes(notesToPlaySol, notesToPlayFa);
         }
 
         toggleLabels.addEventListener('change', () => {
