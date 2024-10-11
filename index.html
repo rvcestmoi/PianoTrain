@@ -75,6 +75,17 @@
             <label for="difficultySlider">Difficulté: <span id="difficultyValue">3</span></label>
             <input type="range" id="difficultySlider" min="1" max="5" step="1" value="3">
         </div>
+        <div class="control">
+            <label for="clefSelect">Clé:</label>
+            <select id="clefSelect">
+                <option value="sol">Clé de Sol</option>
+                <option value="fa">Clé de Fa</option>
+            </select>
+        </div>
+        <div class="control">
+            <input type="checkbox" id="toggleLabels" checked>
+            <label for="toggleLabels">Afficher les labels</label>
+        </div>
         <button id="startStopButton">Start</button>
     </div>
     
@@ -85,6 +96,8 @@
         let imageChangeInterval = 6000;
         let soundDelay = 3000;
         let difficulty = 3;
+        let clef = 'sol';
+        let showLabels = true;
         let intervalId = null;
         let isPlaying = false;
 
@@ -93,6 +106,8 @@
         const imageChangeIntervalSlider = document.getElementById('imageChangeIntervalSlider');
         const soundDelaySlider = document.getElementById('soundDelaySlider');
         const difficultySlider = document.getElementById('difficultySlider');
+        const clefSelect = document.getElementById('clefSelect');
+        const toggleLabels = document.getElementById('toggleLabels');
         const noteIntervalValue = document.getElementById('noteIntervalValue');
         const imageChangeIntervalValue = document.getElementById('imageChangeIntervalValue');
         const soundDelayValue = document.getElementById('soundDelayValue');
@@ -101,11 +116,57 @@
 
         const synth = new Tone.Synth().toDestination();
 
+        const notesPositionsSol = [
+            {"leftMin": 0, "leftMax": 43, "top": 0, "note": "A4"},
+            {"leftMin": 43, "leftMax": 96, "top": 0, "note": "B4"},
+            {"leftMin": 96, "leftMax": 149, "top": 0, "note": "C4"},
+            {"leftMin": 149, "leftMax": 202, "top": 0, "note": "D4"},
+            {"leftMin": 202, "leftMax": 255, "top": 0, "note": "E4"},
+            {"leftMin": 255, "leftMax": 308, "top": 0, "note": "F4"},
+            {"leftMin": 308, "leftMax": 361, "top": 0, "note": "G4"},
+            {"leftMin": 361, "leftMax": 414, "top": 0, "note": "A5"},
+            {"leftMin": 414, "leftMax": 467, "top": 0, "note": "B5"},
+            {"leftMin": 467, "leftMax": 520, "top": 0, "note": "C5"},
+            {"leftMin": 520, "leftMax": 573, "top": 0, "note": "D5"},
+            {"leftMin": 573, "leftMax": 626, "top": 0, "note": "E5"},
+            {"leftMin": 626, "leftMax": 679, "top": 0, "note": "F6"},
+            {"leftMin": 679, "leftMax": 732, "top": 0, "note": "G6"},
+            {"leftMin": 732, "leftMax": 785, "top": 0, "note": "A6"},
+            {"leftMin": 785, "leftMax": 838, "top": 0, "note": "B6"},
+            {"leftMin": 838, "leftMax": 869, "top": 0, "note": "C6"}
+        ];
+
+        const notesPositionsFa = [
+            {"leftMin": 0, "leftMax": 43, "top": 0, "note": "C3"},
+            {"leftMin": 43, "leftMax": 96, "top": 0, "note": "D3"},
+            {"leftMin": 96, "leftMax": 149, "top": 0, "note": "E3"},
+            {"leftMin": 149, "leftMax": 202, "top": 0, "note": "F3"},
+            {"leftMin": 202, "leftMax": 255, "top": 0, "note": "G3"},
+            {"leftMin": 255, "leftMax": 308, "top": 0, "note": "A3"},
+            {"leftMin": 308, "leftMax": 361, "top": 0, "note": "B3"},
+            {"leftMin": 361, "leftMax": 414, "top": 0, "note": "C4"},
+            {"leftMin": 414, "leftMax": 467, "top": 0, "note": "D4"},
+            {"leftMin": 467, "leftMax": 520, "top": 0, "note": "E4"},
+            {"leftMin": 520, "leftMax": 573, "top": 0, "note": "F4"},
+            {"leftMin": 573, "leftMax": 626, "top": 0, "note": "G4"},
+            {"leftMin": 626, "leftMax": 679, "top": 0, "note": "A4"},
+            {"leftMin": 679, "leftMax": 732, "top": 0, "note": "B4"},
+            {"leftMin": 732, "leftMax": 785, "top": 0, "note": "C5"},
+            {"leftMin": 785, "leftMax": 838, "top": 0, "note": "D5"},
+            {"leftMin": 838, "leftMax": 869, "top": 0, "note": "E5"}
+        ];
+
+        function getNotesPositions() {
+            return clef === 'fa' ? notesPositionsFa : notesPositionsSol;
+        }
+
         function initializeSliders() {
             noteIntervalSlider.value = noteInterval;
             imageChangeIntervalSlider.value = imageChangeInterval;
             soundDelaySlider.value = soundDelay;
             difficultySlider.value = difficulty;
+            clefSelect.value = clef;
+            toggleLabels.checked = showLabels;
 
             noteIntervalValue.textContent = noteInterval;
             imageChangeIntervalValue.textContent = imageChangeInterval;
@@ -133,6 +194,14 @@
             difficultyValue.textContent = difficulty;
         });
 
+        clefSelect.addEventListener('change', () => {
+            clef = clefSelect.value;
+        });
+
+        toggleLabels.addEventListener('change', () => {
+            showLabels = toggleLabels.checked;
+        });
+
         startStopButton.addEventListener('click', async () => {
             if (isPlaying) {
                 clearInterval(intervalId);
@@ -147,26 +216,6 @@
                 isPlaying = true;
             }
         });
-
-        const notesPositions = [
-            {"leftMin": 0, "leftMax": 43, "top": 0, "note": "A4"},
-            {"leftMin": 43, "leftMax": 96, "top": 0, "note": "B4"},
-            {"leftMin": 96, "leftMax": 149, "top": 0, "note": "C4"},
-            {"leftMin": 149, "leftMax": 202, "top": 0, "note": "D4"},
-            {"leftMin": 202, "leftMax": 255, "top": 0, "note": "E4"},
-            {"leftMin": 255, "leftMax": 308, "top": 0, "note": "F4"},
-            {"leftMin": 308, "leftMax": 361, "top": 0, "note": "G4"},
-            {"leftMin": 361, "leftMax": 414, "top": 0, "note": "A5"},
-            {"leftMin": 414, "leftMax": 467, "top": 0, "note": "B5"},
-            {"leftMin": 467, "leftMax": 520, "top": 0, "note": "C5"},
-            {"leftMin": 520, "leftMax": 573, "top": 0, "note": "D5"},
-            {"leftMin": 573, "leftMax": 626, "top": 0, "note": "E5"},
-            {"leftMin": 626, "leftMax": 679, "top": 0, "note": "F6"},
-            {"leftMin": 679, "leftMax": 732, "top": 0, "note": "G6"},
-            {"leftMin": 732, "leftMax": 785, "top": 0, "note": "A6"},
-            {"leftMin": 785, "leftMax": 838, "top": 0, "note": "B6"},
-            {"leftMin": 838, "leftMax": 869, "top": 0, "note": "C6"}
-        ];
 
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -185,11 +234,11 @@
 
         async function updateNotes() {
             croppedImagesContainer.innerHTML = '';
+            const notesPositions = getNotesPositions();
             const range = getIntervalRange(difficulty);
             const startPosition = getRandomInt(0, notesPositions.length - range);
             let selectedNotes = notesPositions.slice(startPosition, startPosition + range);
 
-            // Identifier la note la plus basse et l'ajouter en premier
             if (difficulty <= 3) {
                 const lowestNote = selectedNotes.reduce((min, note) => note.leftMin < min.leftMin ? note : min);
                 selectedNotes = selectedNotes.filter(note => note !== lowestNote);
@@ -210,6 +259,9 @@
                 const noteLabel = document.createElement('div');
                 noteLabel.className = 'note-label';
                 noteLabel.textContent = position.note;
+
+                // Afficher ou masquer le label en fonction de l'état de `showLabels`
+                noteLabel.style.display = showLabels ? 'block' : 'none';
 
                 div.appendChild(img);
                 div.appendChild(noteLabel);
