@@ -57,6 +57,7 @@
             margin-top: -150px;
             margin-right: 33px;
             position: relative;
+            display: none; /* Masqué par défaut */
         }
     </style>
 </head>
@@ -67,10 +68,6 @@
         <div class="control">
             <label for="noteIntervalSlider">Temps entre les sons (ms): <span id="noteIntervalValue">600</span></label>
             <input type="range" id="noteIntervalSlider" min="100" max="1000" step="50" value="600">
-        </div>
-        <div class="control">
-            <label for="imageChangeIntervalSlider">Temps entre les changements d'image (ms): <span id="imageChangeIntervalValue">6000</span></label>
-            <input type="range" id="imageChangeIntervalSlider" min="1000" max="10000" step="500" value="6000">
         </div>
         <div class="control">
             <label for="soundDelaySlider">Délai avant le son (ms): <span id="soundDelayValue">3000</span></label>
@@ -106,8 +103,7 @@
 
     <script>
         let noteInterval = 600;
-        let imageChangeInterval = 6000;
-        let soundDelay = 2000;
+        let soundDelay = 3000;
         let difficulty = 3;
         let clef = 'sol';
         let showLabels = true;
@@ -118,14 +114,12 @@
         const croppedImagesSolContainer = document.getElementById('croppedImagesSol');
         const croppedImagesFaContainer = document.getElementById('croppedImagesFa');
         const noteIntervalSlider = document.getElementById('noteIntervalSlider');
-        const imageChangeIntervalSlider = document.getElementById('imageChangeIntervalSlider');
         const soundDelaySlider = document.getElementById('soundDelaySlider');
         const difficultySlider = document.getElementById('difficultySlider');
         const numNotesSlider = document.getElementById('numNotesSlider');
         const clefSelect = document.getElementById('clefSelect');
         const toggleLabels = document.getElementById('toggleLabels');
         const noteIntervalValue = document.getElementById('noteIntervalValue');
-        const imageChangeIntervalValue = document.getElementById('imageChangeIntervalValue');
         const soundDelayValue = document.getElementById('soundDelayValue');
         const difficultyValue = document.getElementById('difficultyValue');
         const numNotesValue = document.getElementById('numNotesValue');
@@ -174,23 +168,12 @@
             {"leftMin": 838, "leftMax": 869, "top": 0, "note": "E5"}
         ];
 
-        function initializeSliders() {
-            noteIntervalSlider.value = noteInterval;
-            imageChangeIntervalSlider.value = imageChangeInterval;
-            soundDelaySlider.value = soundDelay;
-            difficultySlider.value = difficulty;
-            numNotesSlider.value = numNotes;
-            clefSelect.value = clef;
-
-            noteIntervalValue.textContent = noteInterval;
-            imageChangeIntervalValue.textContent = imageChangeInterval;
-            soundDelayValue.textContent = soundDelay;
-            difficultyValue.textContent = difficulty;
-            numNotesValue.textContent = numNotes;
-        }
-
         function getIntervalRange(difficultyLevel) {
             return difficultyLevel === 1 ? 4 : difficultyLevel + 3;
+        }
+
+        function calculateImageChangeInterval() {
+            return numNotes * (noteInterval + 1) + soundDelay;
         }
 
         async function playNotes(notesSol, notesFa) {
@@ -217,11 +200,15 @@
                 const noteLabel = document.createElement('div');
                 noteLabel.className = 'note-label';
                 noteLabel.textContent = position.note;
-                noteLabel.style.display = showLabels ? 'block' : 'none';
 
                 div.appendChild(img);
                 div.appendChild(noteLabel);
                 container.appendChild(div);
+
+                // Affiche les labels après le délai
+                setTimeout(() => {
+                    noteLabel.style.display = showLabels ? 'block' : 'none';
+                }, soundDelay);
             });
         }
 
@@ -273,7 +260,8 @@
             } else {
                 await Tone.start();
                 updateNotes();
-                intervalId = setInterval(updateNotes, imageChangeInterval);
+                const calculatedInterval = calculateImageChangeInterval();
+                intervalId = setInterval(updateNotes, calculatedInterval);
                 startStopButton.textContent = 'Stop';
                 isPlaying = true;
             }
@@ -282,11 +270,6 @@
         noteIntervalSlider.addEventListener('input', () => {
             noteInterval = parseInt(noteIntervalSlider.value);
             noteIntervalValue.textContent = noteInterval;
-        });
-
-        imageChangeIntervalSlider.addEventListener('input', () => {
-            imageChangeInterval = parseInt(imageChangeIntervalSlider.value);
-            imageChangeIntervalValue.textContent = imageChangeInterval;
         });
 
         soundDelaySlider.addEventListener('input', () => {
