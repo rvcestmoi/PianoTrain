@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rognage de Partition</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.34/Tone.min.js"></script>
+    <script src="https://unpkg.com/tone@latest/build/Tone.js"></script>
+    
     <style>
         body {
             display: flex;
@@ -29,7 +30,7 @@
         .cropped-images-container {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 5px;
         }
         .cropped-images {
             display: flex;
@@ -57,7 +58,6 @@
             margin-top: -150px;
             margin-right: 33px;
             position: relative;
-            display: none; /* Masqué par défaut */
         }
     </style>
 </head>
@@ -74,8 +74,8 @@
             <input type="range" id="soundDelaySlider" min="0" max="5000" step="100" value="3000">
         </div>
         <div class="control">
-            <label for="difficultySlider">Difficulté: <span id="difficultyValue">3</span></label>
-            <input type="range" id="difficultySlider" min="1" max="5" step="1" value="3">
+            <label for="intervalSlider">Intervalle: <span id="intervalValue">5</span></label>
+            <input type="range" id="intervalSlider" min="1" max="10" step="1" value="5">
         </div>
         <div class="control">
             <label for="numNotesSlider">Nombre de notes: <span id="numNotesValue">5</span></label>
@@ -103,8 +103,8 @@
 
     <script>
         let noteInterval = 600;
-        let soundDelay = 3000;
-        let difficulty = 3;
+        let soundDelay = 2000;
+        let interval = 5;
         let clef = 'sol';
         let showLabels = true;
         let numNotes = 5;
@@ -115,13 +115,13 @@
         const croppedImagesFaContainer = document.getElementById('croppedImagesFa');
         const noteIntervalSlider = document.getElementById('noteIntervalSlider');
         const soundDelaySlider = document.getElementById('soundDelaySlider');
-        const difficultySlider = document.getElementById('difficultySlider');
+        const intervalSlider = document.getElementById('intervalSlider');
         const numNotesSlider = document.getElementById('numNotesSlider');
         const clefSelect = document.getElementById('clefSelect');
         const toggleLabels = document.getElementById('toggleLabels');
         const noteIntervalValue = document.getElementById('noteIntervalValue');
         const soundDelayValue = document.getElementById('soundDelayValue');
-        const difficultyValue = document.getElementById('difficultyValue');
+        const intervalValue = document.getElementById('intervalValue');
         const numNotesValue = document.getElementById('numNotesValue');
         const startStopButton = document.getElementById('startStopButton');
 
@@ -168,12 +168,21 @@
             {"leftMin": 838, "leftMax": 869, "top": 0, "note": "E5"}
         ];
 
-        function getIntervalRange(difficultyLevel) {
-            return difficultyLevel === 1 ? 4 : difficultyLevel + 3;
+        function initializeSliders() {
+            noteIntervalSlider.value = noteInterval;
+            soundDelaySlider.value = soundDelay;
+            intervalSlider.value = interval;
+            numNotesSlider.value = numNotes;
+            clefSelect.value = clef;
+
+            noteIntervalValue.textContent = noteInterval;
+            soundDelayValue.textContent = soundDelay;
+            intervalValue.textContent = interval;
+            numNotesValue.textContent = numNotes;
         }
 
-        function calculateImageChangeInterval() {
-            return numNotes * (noteInterval + 1) + soundDelay;
+        function getIntervalRange(intervalLevel) {
+            return intervalLevel;
         }
 
         async function playNotes(notesSol, notesFa) {
@@ -184,7 +193,7 @@
             notesFa.forEach((note, i) => {
                 synthFa.triggerAttackRelease(note, "8n", now + i * (noteInterval / 1000));
             });
-            await new Promise(resolve => setTimeout(resolve, Math.max(notesSol.length, notesFa.length) * noteInterval));
+            await new Promise(resolve => setTimeout(resolve, Math.max(notesSol.length, notesFa.length) * noteInterval + 500));
         }
 
         function displayNotes(notes, container) {
@@ -200,23 +209,25 @@
                 const noteLabel = document.createElement('div');
                 noteLabel.className = 'note-label';
                 noteLabel.textContent = position.note;
+                noteLabel.style.display = showLabels ? 'none' : 'block';
 
                 div.appendChild(img);
                 div.appendChild(noteLabel);
                 container.appendChild(div);
-
-                // Affiche les labels après le délai
-                setTimeout(() => {
-                    noteLabel.style.display = showLabels ? 'block' : 'none';
-                }, soundDelay);
             });
+
+            if (showLabels) {
+                setTimeout(() => {
+                    document.querySelectorAll(".note-label").forEach(label => label.style.display = 'block');
+                }, soundDelay);
+            }
         }
 
         async function updateNotes() {
             croppedImagesSolContainer.innerHTML = '';
             croppedImagesFaContainer.innerHTML = '';
 
-            const range = getIntervalRange(difficulty);
+            const range = getIntervalRange(interval);
             let selectedNotesSol = [];
             let selectedNotesFa = [];
 
@@ -251,21 +262,32 @@
             showLabels = toggleLabels.checked;
         });
 
-        startStopButton.addEventListener('click', async () => {
-            if (isPlaying) {
-                clearInterval(intervalId);
-                intervalId = null;
-                startStopButton.textContent = 'Start';
-                isPlaying = false;
-            } else {
-                await Tone.start();
-                updateNotes();
-                const calculatedInterval = calculateImageChangeInterval();
-                intervalId = setInterval(updateNotes, calculatedInterval);
-                startStopButton.textContent = 'Stop';
-                isPlaying = true;
-            }
-        });
+startStopButton.addEventListener('click', async () => {
+    if (isPlaying) {
+        clearInterval(intervalId);
+        intervalId = null;
+        startStopButton.textContent = 'Start';
+        isPlaying = false;
+    } else {
+        await Tone.start();
+        isPlaying = true;
+        startStopButton.textContent = 'Stop';
+        scheduleNextUpdate(); // Lancer la première mise à jour
+    }
+});
+
+function scheduleNextUpdate() {
+    if (!isPlaying) return;
+
+    updateNotes(); // Exécute la fonction d'affichage et de lecture des notes
+
+    // Calculer l'intervalle total en fonction des valeurs actuelles
+    let totintervall = (noteInterval * numNotes) + soundDelay + 500;
+    console.log("Prochain changement dans:", totintervall, "ms");
+
+    // Utiliser setTimeout pour planifier la prochaine exécution de updateNotes
+    intervalId = setTimeout(scheduleNextUpdate, totintervall);
+}
 
         noteIntervalSlider.addEventListener('input', () => {
             noteInterval = parseInt(noteIntervalSlider.value);
@@ -277,9 +299,9 @@
             soundDelayValue.textContent = soundDelay;
         });
 
-        difficultySlider.addEventListener('input', () => {
-            difficulty = parseInt(difficultySlider.value);
-            difficultyValue.textContent = difficulty;
+        intervalSlider.addEventListener('input', () => {
+            interval = parseInt(intervalSlider.value);
+            intervalValue.textContent = interval;
         });
 
         numNotesSlider.addEventListener('input', () => {
