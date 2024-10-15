@@ -208,18 +208,18 @@
                 const noteLabel = document.createElement('div');
                 noteLabel.className = 'note-label';
                 noteLabel.textContent = position.note;
-                noteLabel.style.display = showLabels ? 'none' : 'block';
+                noteLabel.style.display =  'none';
 
                 div.appendChild(img);
                 div.appendChild(noteLabel);
                 container.appendChild(div);
             });
 
-            if (showLabels) {
-                setTimeout(() => {
-                    document.querySelectorAll(".note-label").forEach(label => label.style.display = 'block');
-                }, soundDelay);
-            }
+    if (showLabels) {
+        setTimeout(() => {
+            document.querySelectorAll(".note-label").forEach(label => label.style.display = 'block');
+        }, soundDelay);
+    }
         }
 
         async function updateNotes() {
